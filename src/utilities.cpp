@@ -1,0 +1,157 @@
+#include <filesystem>
+#include <algorithm>
+#include <sstream>
+#include <string>
+#include <chrono>
+#include <ctime>
+
+#if __unix__
+#   include <fontconfig/fontconfig.h>
+#elif _WIN32
+#   include <windows.h>
+#endif
+
+#include "../inc/logging_utility.hpp"
+
+
+#include "../inc/utilities.hpp"
+
+
+namespace Utils {
+    auto
+    Get_Current_Time() -> std::string
+    {
+        const int32_t MICROSECOND_UPPER_BOUND = 1000000;
+        const int32_t MICROSECOND_TO_MILISECOND = 1000;
+
+        auto now = std::chrono::system_clock::now();
+        auto now_c = std::chrono::system_clock::to_time_t(now);
+
+        std::tm tm_info{};
+        localtime_r(&now_c, &tm_info);
+
+        auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(
+            now.time_since_epoch()
+        ) % MICROSECOND_UPPER_BOUND;
+
+        std::ostringstream oss;
+        oss << std::setfill('0') << std::setw(2) << tm_info.tm_min << ":"
+            << std::setfill('0') << std::setw(2) << tm_info.tm_sec << ":"
+            << std::setfill('0') << std::setw(3) << (microseconds.count() / MICROSECOND_TO_MILISECOND);
+
+        return oss.str();
+    }
+
+
+    auto
+    Trim_String(std::string &str, Direction trim_direction) -> bool
+    {
+        if (
+            trim_direction == Direction::All ||
+            trim_direction == Direction::Left
+        ) {
+            str.erase(
+                str.begin(),
+                std::ranges::find_if(
+                    str,
+                    [](unsigned char ch)
+                    { return !std::isspace(ch); }
+                )
+            );
+        }
+
+        if (
+            trim_direction == Direction::All ||
+            trim_direction == Direction::Right
+        ) {
+            str.erase(
+                std::ranges::find_if(
+                    str.rbegin(),
+                    str.rend(),
+                    [](unsigned char ch)
+                    { return !std::isspace(ch); }
+                ).base(), str.end()
+            );
+        }
+        return !str.empty();
+    }
+
+
+    auto
+    Match_Font(const std::string &font_name) -> const char*
+    {
+        if (Is_Valid_File(font_name)) return font_name.c_str();
+#if __unix__
+        FcConfig *config = FcInitLoadConfigAndFonts();
+
+        FcPattern *pattern = FcNameParse(reinterpret_cast<const FcChar8*>(font_name.c_str()));
+        if (pattern == nullptr) {
+            Log::Err("Unable to create FcPattern");
+            return nullptr;
+        }
+
+        FcConfigSubstitute(config, pattern, FcMatchPattern);
+        FcDefaultSubstitute(pattern);
+
+        FcResult result = FcResult::FcResultNoId;
+        FcPattern *font = FcFontMatch(config, pattern, &result);
+
+        if (font != nullptr) {
+            FcChar8 *file = nullptr;
+
+            if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
+                return reinterpret_cast<char*>(file);
+            }
+            FcPatternDestroy(font);
+        }
+        FcPatternDestroy(pattern);
+#elif _WIN32
+    // TODO: somehow makes the code for linux works on Windows
+    return "C:\\Windows\\Fonts\\arial.ttf"
+#endif
+        return nullptr;
+    }
+
+
+    auto
+    Is_Valid_File(const std::string &file_path) -> bool
+    {
+        return (
+            std::filesystem::exists(file_path) &&
+            std::filesystem::is_regular_file(file_path)
+        );
+    }
+
+
+    auto
+    Is_Word_Bound(char c) -> bool
+    {
+        return ((std::isspace(c) != 0) || (std::ispunct(c) != 0));
+    }
+
+
+    auto
+    Is_All_Space(std::string_view checked_string) -> bool
+    {
+        return std::ranges::all_of(
+            checked_string,
+            [](char c) -> bool { return std::isspace(c); }
+        );
+    }
+
+
+    auto
+    Path_To_String(const std::filesystem::path &path) -> std::string
+    {
+        const std::u8string utf8_string = path.u8string();
+        return { utf8_string.cbegin(), utf8_string.cend() };
+    }
+
+
+    auto
+    String_To_Path(const std::string &utf8_string) -> std::filesystem::path
+    {
+        const std::u8string u8s(utf8_string.cbegin(), utf8_string.cend());
+        return { u8s };
+    }
+} /* namespace Utils */
