@@ -1,5 +1,5 @@
 # c+text
-A simple GUI text editor made in C++
+A simple GUI text editor, made in C++
 
 #### Features
 - Vim motions
@@ -8,17 +8,12 @@ A simple GUI text editor made in C++
 and more to come!
 
 # Installation
-> [!IMPORTANT]
-> This program has not been tested on any other operating system other than Linux,
-> I have tried to implement some things to make this program more cross platform, however
-> I have no idea on how to.
 
 > [!NOTE]
 > This program requires SDL3, SDL3_ttf, and fontconfig to be installed on your system
 
 ### Building from source
 
-#### Linux
 ```bash
 # Clone the repository
 $ git clone https://github.com/RQuarx/c-text/
