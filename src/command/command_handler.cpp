@@ -1,15 +1,15 @@
-#include "../inc/logging_utility.hpp"
+#include "../../inc/command.hpp"
 
-#include "../inc/command_handler.hpp"
+using Command::Handler;
 
 
 void
-CommandHandler::Init(CursorRenderer *cursor_renderer)
+Handler::Init(Cursor::Renderer *cursor_renderer)
 { this->cursor_renderer = cursor_renderer; }
 
 
 void
-CommandHandler::Update_Command(std::string &str)
+Handler::Update_Command(std::string &str)
 {
     command.insert(cursor.x, str);
     cursor.x += str.length();
@@ -17,7 +17,7 @@ CommandHandler::Update_Command(std::string &str)
 
 
 void
-CommandHandler::Clear_Command()
+Handler::Clear_Command()
 {
     command.clear();
     command = ":";
@@ -26,7 +26,7 @@ CommandHandler::Clear_Command()
 
 
 auto
-CommandHandler::Render(AppData *app_data) -> bool
+Handler::Render(AppData *app_data) -> bool
 {
     if (command == "::") {
         command = ":";
@@ -84,13 +84,18 @@ CommandHandler::Render(AppData *app_data) -> bool
         ) { return false; }
     }
 
-    CursorData cursor_data( command, cursor, { static_cast<int64_t>(panel.x), static_cast<int64_t>(text_y) }, Beam, "editor" );
-    return cursor_renderer->Render(app_data, &cursor_data);
+    Cursor::Data cursor_data(
+        command,
+        cursor,
+        { static_cast<int64_t>(panel.x), static_cast<int64_t>(text_y) },
+        Cursor::Type::Beam
+    );
+    return cursor_renderer->Render(app_data, &cursor_data, "editor");
 }
 
 
 auto
-CommandHandler::Get_Command() -> std::string_view
+Handler::Get_Command() -> std::string_view
 {
     std::string_view returned_str = command;
     return returned_str.substr(1);
@@ -98,7 +103,7 @@ CommandHandler::Get_Command() -> std::string_view
 
 
 auto
-CommandHandler::Handle_Backspace() -> bool
+Handler::Handle_Backspace() -> bool
 {
     if (cursor.x <= 1) return false;
 

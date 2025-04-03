@@ -71,4 +71,12 @@ namespace Utils {
 
     auto Path_To_String(const std::filesystem::path &path) -> std::string;
     auto String_To_Path(const std::string &utf8_string) -> std::filesystem::path;
+
+    /// Checks if the current instance is alone
+    /// @returns true if the current instance is alone, or false if there are others
+    auto Is_Instance_Alone(const std::string &lock_file_path = "/tmp/c+text.lock") -> bool;
+
+    auto Create_File_Path_Tmp(const std::string &file_path, const std::string &tmp_path = "/tmp/c+text_file_path") -> bool;
+
+    void Listen_Tmp_File_Path(const std::string &tmp_path = "/tmp/c+text_file_path");
 } /* namespace Utils */

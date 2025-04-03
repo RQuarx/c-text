@@ -1,10 +1,10 @@
-#include <print>
+#include "../../inc/input.hpp"
 
-#include "../inc/input_logic.hpp"
+using Input::Logic;
 
 
 auto
-InputLogic::Handle_Backspace(EditorData *editor_data, bool is_lctrl_pressed) -> bool
+Logic::Handle_Backspace(Editor::Data *editor_data, bool is_lctrl_pressed) -> bool
 {
     Position *cursor = &editor_data->cursor;
 
@@ -37,7 +37,7 @@ InputLogic::Handle_Backspace(EditorData *editor_data, bool is_lctrl_pressed) -> 
 
 
 void
-InputLogic::Handle_Ctrl_Backspace(EditorData *editor_data)
+Logic::Handle_Ctrl_Backspace(Editor::Data *editor_data)
 {
     Position *cursor = &editor_data->cursor;
 
@@ -66,7 +66,7 @@ InputLogic::Handle_Ctrl_Backspace(EditorData *editor_data)
 
 
 auto
-InputLogic::Handle_Return(EditorData *editor_data) -> bool
+Logic::Handle_Return(Editor::Data *editor_data) -> bool
 {
     std::string_view line = editor_data->file_content.at(editor_data->cursor.y);
     std::string insert_line;

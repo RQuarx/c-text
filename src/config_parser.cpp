@@ -19,9 +19,7 @@ ConfigParser::Init_Config(ConfigParser *config, ArgParser *arg_parser, bool debu
             config_file,
             { "-c", "--config" }
         )
-    ) {
-        config_file = DEFAULT_CONFIG_PATH;
-    }
+    ) { config_file = DEFAULT_CONFIG_PATH; }
 
     std::filesystem::path config_path = std::filesystem::path(config_file);
 

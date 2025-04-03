@@ -8,7 +8,7 @@
 
 namespace File {
     auto
-    Parse_File(std::string &file_path, int32_t tab_size) -> std::vector<std::string>
+    Parse_File(std::string &file_path, int32_t tab_size, bool first_init) -> std::vector<std::string>
     {
         std::vector<std::string> file_content;
 
@@ -19,6 +19,7 @@ namespace File {
         std::ifstream file(file_path);
 
         if (!file.is_open()) {
+            if (first_init) Log::Failed_Msg();
             Log::Err("Failed to open file: {}", file_path);
             return file_content; /* Returns an empty vector */
         }

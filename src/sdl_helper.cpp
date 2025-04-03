@@ -19,7 +19,7 @@ SDL::Load_Fonts(AppData *app_data, bool debug) -> bool
         app_data->fonts.emplace(category, TTF_OpenFont(font_file, font_size));
 
         if (app_data->fonts.at(category) == nullptr) {
-            if (debug) Log::Failed_Msg();
+            Log::Failed_Msg();
             Log::SDL_Err("Failed to load font");
             return false;
         }
@@ -35,7 +35,7 @@ SDL::Init_Video_Subsystem(bool debug) -> bool
 {
     if (debug) Log::Debug(stdout, "Initialising video subsystem: ");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
-        if (debug) Log::Failed_Msg();
+        Log::Failed_Msg();
         Log::SDL_Err("Failed to initialise video subsystem");
         return false;
     }
@@ -59,7 +59,7 @@ SDL::Init_App_Metadata(
             app_info->identifier.c_str()
         )
     ) {
-        if (debug) Log::Failed_Msg();
+        Log::Failed_Msg();
         Log::Err("Failed to set metadata");
         return false;
     }
@@ -74,7 +74,7 @@ SDL::Init_SDL_TTF(bool debug) -> bool
 {
     if (debug) Log::Debug(stdout, "Initialising SDL_TTF: ");
     if (!TTF_Init()) {
-        if (debug) Log::Failed_Msg();
+        Log::Failed_Msg();
         Log::Err("Failed to initialise SDL_TTF");
         return false;
     }
@@ -103,7 +103,7 @@ SDL::Init_Window_Renderer(AppData *app_data, const char *window_title, bool debu
             &app_data->renderer
         )
     ) {
-        if (debug) Log::Failed_Msg();
+        Log::Failed_Msg();
         Log::Err("Failed to create window and renderer!");
         return false;
     }
@@ -120,14 +120,14 @@ SDL::Fetch_Display_Mode(AppData *app_data, bool debug) -> bool
 
     SDL_DisplayID *displays = SDL_GetDisplays(nullptr);
     if (displays == nullptr) {
-        if (debug) Log::Failed_Msg();
+        Log::Failed_Msg();
         Log::Err("Failed to get displays");
         return false;
     }
 
     app_data->display_mode = SDL_GetCurrentDisplayMode(*displays);
     if (app_data->display_mode == nullptr) {
-        if (debug) Log::Failed_Msg();
+        Log::Failed_Msg();
         Log::Err("Failed to get display mode");
         return false;
     }
@@ -153,6 +153,7 @@ SDL::Init(
         Fetch_Display_Mode(app_data, app_data->debug)
     ) {
         if (!SDL_SetRenderVSync(app_data->renderer, 1)) {
+            Log::Failed_Msg();
             Log::SDL_Err("Failed to set render vsync");
             return false;
         }
@@ -166,7 +167,6 @@ SDL::Init(
 void
 SDL::Kill(AppData *app_data)
 {
-    Log::Info("Killing c+text...\n");
     for (auto &font : app_data->fonts) {
         if (font.second != nullptr) TTF_CloseFont(font.second);
     }

@@ -1,21 +1,18 @@
 #include <filesystem>
 #include <algorithm>
-#include <sstream>
+#include <fstream>
+#include <atomic>
 #include <string>
 #include <chrono>
 #include <ctime>
 
-#if __unix__
-#   include <fontconfig/fontconfig.h>
-#elif _WIN32
-#   include <windows.h>
-#endif
+#include <fontconfig/fontconfig.h>
 
 #include "../inc/logging_utility.hpp"
-
-
 #include "../inc/utilities.hpp"
 
+
+static std::atomic<bool> is_check_running = true;
 
 namespace Utils {
     auto
@@ -34,12 +31,10 @@ namespace Utils {
             now.time_since_epoch()
         ) % MICROSECOND_UPPER_BOUND;
 
-        std::ostringstream oss;
-        oss << std::setfill('0') << std::setw(2) << tm_info.tm_min << ":"
-            << std::setfill('0') << std::setw(2) << tm_info.tm_sec << ":"
-            << std::setfill('0') << std::setw(3) << (microseconds.count() / MICROSECOND_TO_MILISECOND);
-
-        return oss.str();
+        return std::format(
+            "{:02}:{:02}:{:03}",
+            tm_info.tm_min, tm_info.tm_min, microseconds.count() / MICROSECOND_TO_MILISECOND
+        );
     }
 
 
@@ -81,7 +76,6 @@ namespace Utils {
     Match_Font(const std::string &font_name) -> const char*
     {
         if (Is_Valid_File(font_name)) return font_name.c_str();
-#if __unix__
         FcConfig *config = FcInitLoadConfigAndFonts();
 
         FcPattern *pattern = FcNameParse(reinterpret_cast<const FcChar8*>(font_name.c_str()));
@@ -105,10 +99,6 @@ namespace Utils {
             FcPatternDestroy(font);
         }
         FcPatternDestroy(pattern);
-#elif _WIN32
-    // TODO: somehow makes the code for linux works on Windows
-    return "C:\\Windows\\Fonts\\arial.ttf"
-#endif
         return nullptr;
     }
 
@@ -154,4 +144,26 @@ namespace Utils {
         const std::u8string u8s(utf8_string.cbegin(), utf8_string.cend());
         return { u8s };
     }
+
+
+    auto
+    Is_Instance_Alone(const std::string &lock_file_path) -> bool
+    {
+        struct stat buffer{};
+        if (stat(lock_file_path.c_str(), &buffer) == 0) return false;
+
+        std::ofstream lock_file(lock_file_path);
+        return !!lock_file;
+    }
+
+
+    // void
+    // Listen_Tmp_File_Path(const std::string &tmp_path)
+    // {
+    //     while (is_check_running) {
+    //         if (std::filesystem::exists(tmp_path)) {
+
+    //         }
+    //     }
+    // }
 } /* namespace Utils */

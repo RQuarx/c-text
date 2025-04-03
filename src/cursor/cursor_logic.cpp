@@ -1,11 +1,14 @@
-#include "../inc/cursor_logic.hpp"
+#include "../../inc/editor.hpp"
+#include "../../inc/cursor.hpp"
+
+using Cursor::Logic;
 
 
 auto
-CursorLogic::Move_Cursor_Right(EditorData *editor_data, bool is_lctrl_pressed) -> bool
+Logic::Move_Cursor_Right(Editor::Data *editor_data, bool is_lctrl_pressed) -> bool
 {
     int64_t line_len = editor_data->file_content.at(editor_data->cursor.y).length();
-    if (editor_data->mode == Normal && line_len > 0) line_len--;
+    if (editor_data->mode == Editor::Normal && line_len > 0) line_len--;
 
     Position *cursor = &editor_data->cursor;
 
@@ -24,7 +27,7 @@ CursorLogic::Move_Cursor_Right(EditorData *editor_data, bool is_lctrl_pressed) -
         if (cursor->y < file_size) {
             cursor->y++;
             cursor->x = 0;
-        } else if (cursor->y == file_size && editor_data->mode == Normal) {
+        } else if (cursor->y == file_size && editor_data->mode == Editor::Normal) {
             cursor->x = line_len;
             return false;
         }
@@ -35,12 +38,12 @@ CursorLogic::Move_Cursor_Right(EditorData *editor_data, bool is_lctrl_pressed) -
 
 
 void
-CursorLogic::Ctrl_Cursor_Right(EditorData *editor_data)
+Logic::Ctrl_Cursor_Right(Editor::Data *editor_data)
 {
     std::string line = editor_data->file_content.at(editor_data->cursor.y);
     int64_t line_len = line.length();
 
-    if (editor_data->mode == Normal && line_len > 0) line_len--;
+    if (editor_data->mode == Editor::Normal && line_len > 0) line_len--;
     if (
         editor_data->cursor.x <= line_len &&
         Utils::Is_Word_Bound(line.at(editor_data->cursor.x))
@@ -57,10 +60,10 @@ CursorLogic::Ctrl_Cursor_Right(EditorData *editor_data)
 
 
 auto
-CursorLogic::Move_Cursor_Left(EditorData *editor_data, bool is_lctrl_pressed) -> bool
+Logic::Move_Cursor_Left(Editor::Data *editor_data, bool is_lctrl_pressed) -> bool
 {
     Position *cursor = &editor_data->cursor;
-    uint8_t position_offset = (editor_data->mode == Normal ? 1 : 0);
+    uint8_t position_offset = (editor_data->mode == Editor::Normal ? 1 : 0);
 
     if (cursor->x > 0) {
         if (is_lctrl_pressed) {
@@ -84,11 +87,11 @@ CursorLogic::Move_Cursor_Left(EditorData *editor_data, bool is_lctrl_pressed) ->
 
 
 void
-CursorLogic::Ctrl_Cursor_Left(EditorData *editor_data)
+Logic::Ctrl_Cursor_Left(Editor::Data *editor_data)
 {
     Position *cursor = &editor_data->cursor;
     std::string line = editor_data->file_content.at(cursor->y);
-    uint8_t position_offset = (editor_data->mode == Normal ? 1 : 0);
+    uint8_t position_offset = (editor_data->mode == Editor::Normal ? 1 : 0);
 
     if (
         cursor->x > 0 &&
@@ -104,7 +107,7 @@ CursorLogic::Ctrl_Cursor_Left(EditorData *editor_data)
 
 
 auto
-CursorLogic::Move_Cursor_Down(EditorData *editor_data, bool is_lctrl_pressed) -> bool
+Logic::Move_Cursor_Down(Editor::Data *editor_data, bool is_lctrl_pressed) -> bool
 {
     Position *cursor = &editor_data->cursor;
 
@@ -124,7 +127,7 @@ CursorLogic::Move_Cursor_Down(EditorData *editor_data, bool is_lctrl_pressed) ->
 
     int64_t line_len =
         editor_data->file_content.at(cursor->y).length();
-    if (editor_data->mode == Normal && line_len > 0) line_len--;
+    if (editor_data->mode == Editor::Normal && line_len > 0) line_len--;
 
     cursor->x = editor_data->cursor_max_x;
     cursor->x = std::min(cursor->x, line_len);
@@ -133,7 +136,7 @@ CursorLogic::Move_Cursor_Down(EditorData *editor_data, bool is_lctrl_pressed) ->
 
 
 auto
-CursorLogic::Move_Cursor_Up(EditorData *editor_data, bool is_lctrl_pressed) -> bool
+Logic::Move_Cursor_Up(Editor::Data *editor_data, bool is_lctrl_pressed) -> bool
 {
     Position *cursor = &editor_data->cursor;
 
@@ -149,7 +152,7 @@ CursorLogic::Move_Cursor_Up(EditorData *editor_data, bool is_lctrl_pressed) -> b
     editor_data->scroll.y = std::min(--cursor->y, editor_data->scroll.y);
 
     int64_t line_len = editor_data->file_content.at(cursor->y).length();
-    if (editor_data->mode == Normal && line_len > 0) { line_len--; }
+    if (editor_data->mode == Editor::Normal && line_len > 0) { line_len--; }
 
     cursor->x = editor_data->cursor_max_x;
     cursor->x = std::min(cursor->x, line_len);

@@ -12,7 +12,7 @@ namespace File {
     /// @param file_path the path to the specified file, must be of type 'regular_file'
     /// @param tab_size the amount of spaces that will be used to replace the \t character
     /// @return will return an empty vector on failure
-    auto Parse_File(std::string &file_path, int32_t tab_size) -> std::vector<std::string>;
+    auto Parse_File(std::string &file_path, int32_t tab_size, bool first_init = false) -> std::vector<std::string>;
 
 
     /// Parses a file and put the text into a std::vector<std::string> type

@@ -1,14 +1,11 @@
-#include <print>
-
 #include "../inc/argument_parser.hpp"
-#include "../inc/command_handler.hpp"
 #include "../inc/logging_utility.hpp"
 #include "../inc/config_parser.hpp"
-#include "../inc/input_handler.hpp"
 #include "../inc/file_handler.hpp"
 #include "../inc/sdl_helper.hpp"
-#include "../inc/utilities.hpp"
+#include "../inc/command.hpp"
 #include "../inc/editor.hpp"
+#include "../inc/input.hpp"
 
 static const float ONE_SECOND_MS = 1000.0F;
 static const char *const APP_NAME = "c+text";
@@ -26,7 +23,7 @@ enum AppResult : uint8_t {
 
 namespace {
     auto
-    App_Render(AppData *app_data, Editor *editor, CommandHandler *command) -> bool
+    App_Render(AppData *app_data, Editor::UI *editor_ui, Command::Handler *command) -> bool
     {
         if (
             !SDL::Set_Draw_Color_Blend(
@@ -36,9 +33,9 @@ namespace {
         ) return false;
         SDL_RenderClear(app_data->renderer);
 
-        if (!editor->Render(app_data)) return false;
+        if (!editor_ui->Render(app_data)) return false;
 
-        if (editor->Get_Data()->mode == EditorMode::Command) {
+        if (editor_ui->Get_Data()->mode == Editor::Command) {
             if (!command->Render(app_data)) return false;
         }
 
@@ -48,17 +45,17 @@ namespace {
 
 
     auto
-    Handle_Mouse_Wheel(SDL_MouseWheelEvent wheel_event, Editor *editor) -> bool
+    Handle_Mouse_Wheel(SDL_MouseWheelEvent wheel_event, Editor::UI *editor_ui) -> bool
     {
         auto direction = wheel_event.y;
-        auto *scroll = &editor->Get_Data()->scroll;
+        auto *scroll = &editor_ui->Get_Data()->scroll;
 
         if (direction > 0 && scroll->y > 0) {
             scroll->y--;
             return true;
         }
 
-        if (direction < 0 && scroll->y < static_cast<int64_t>(editor->Get_Data()->file_content.size())) {
+        if (direction < 0 && scroll->y < static_cast<int64_t>(editor_ui->Get_Data()->file_content.size())) {
             scroll->y++;
             return true;
         }
@@ -68,7 +65,7 @@ namespace {
 
 
     auto
-    App_Event(SDL_Event *event, AppData *app_data, InputHandler *input_handler, Editor *editor, CommandHandler *command) -> AppResult
+    App_Event(SDL_Event *event, AppData *app_data, Input::Handler *input_handler, Editor::UI *editor_ui, Command::Handler *command) -> AppResult
     {
         while (SDL_PollEvent(event)) {
             switch (event->type) {
@@ -76,20 +73,20 @@ namespace {
                 return Exit_Success;
 
             case SDL_EVENT_MOUSE_WHEEL:
-                if (Handle_Mouse_Wheel(event->wheel, editor)) {
+                if (Handle_Mouse_Wheel(event->wheel, editor_ui)) {
                     return Continue_Render;
                 } else { return Continue_Skip; }
 
             case SDL_EVENT_TEXT_INPUT: {
-                auto *data = editor->Get_Data();
+                auto *data = editor_ui->Get_Data();
                 std::string text = event->text.text;
 
-                if (data->mode == Command) {
+                if (data->mode == Editor::Command) {
                     command->Update_Command(text);
                     return Continue_Render;
                 }
 
-                if (data->mode == Insert) {
+                if (data->mode == Editor::Insert) {
                     data->file_content.at(data->cursor.y).insert(data->cursor.x, text);
                     data->cursor.x += text.length();
                     data->cursor_max_x = data->cursor.x;
@@ -99,7 +96,7 @@ namespace {
 
             case SDL_EVENT_KEY_DOWN:
                 return (
-                    input_handler->Handle(event->key.scancode, editor, app_data, command) ? Continue_Render : Continue_Skip
+                    input_handler->Handle(event->key.scancode, editor_ui, app_data, command) ? Continue_Render : Continue_Skip
                 );
 
             case SDL_EVENT_WINDOW_RESIZED:
@@ -131,20 +128,24 @@ namespace {
     auto
     App_Init(
         AppData *app_data,
-        Editor *editor,
-        CursorRenderer *cursor_renderer,
-        CommandHandler *command,
+        Editor::UI *editor_ui,
+        Cursor::Renderer *cursor_renderer,
+        Command::Handler *command,
         ConfigParser *config,
         ArgParser *arg_parser
     ) -> bool
     {
-        Log::Info("Initialisation started...\n");
+        if (app_data->debug) {
+            Log::Info("Initialisation started...\n");
+        } else {
+            Log::Info("Initialising c+text: ");
+        }
 
         /* Finding / getting the file to edit */
         std::string file_path;
         arg_parser->Get_File_Path(config, file_path);
 
-        if (!Editor::Init_Editor(editor, file_path, cursor_renderer, app_data->debug)) return false;
+        if (!Editor::UI::Init(editor_ui, file_path, cursor_renderer, app_data->debug)) return false;
 
         std::string window_title = (
             config->Get_Value("window", "static_title") == "yes" ?
@@ -165,13 +166,16 @@ namespace {
         auto buff = File::Parse_File(file_path, config->Get_Int_Value("file", "tab_size"));
 
         if (buff.empty()) {
-            editor->Get_Data()->file_content.assign(1, "");
+            editor_ui->Get_Data()->file_content.assign(1, "");
         } else {
-            editor->Get_Data()->file_content = buff;
+            editor_ui->Get_Data()->file_content = buff;
         }
 
-
-        Log::Info("Initialitation completed, starting rendering process\n");
+        if (app_data->debug) {
+            Log::Info("Initialitation completed, starting rendering process\n");
+        } else {
+            Log::Success_Msg();
+        }
         return true;
     }
 } /* Anonymous namespace */
@@ -186,11 +190,11 @@ main(int32_t argc, char **argv) -> int32_t
     ArgParser arg_parser(argc, argv);
     Parse_Arg(&arg_parser, &debug);
 
-    CursorRenderer cursor_renderer{};
-    InputHandler input_handler{};
-    CommandHandler command;
+    Cursor::Renderer cursor_renderer{};
+    Input::Handler input_handler{};
+    Command::Handler command;
     AppData app_data;
-    Editor editor;
+    Editor::UI editor_ui;
 
     app_data.debug = debug;
 
@@ -198,8 +202,15 @@ main(int32_t argc, char **argv) -> int32_t
     ConfigParser config;
     if (!ConfigParser::Init_Config(&config, &arg_parser, debug)) return EXIT_FAILURE;
 
+    // if (!Utils::Is_Instance_Alone()) {
+    //     std::string file_path;
+    //     if (!arg_parser.Get_File_Path(&config, file_path)) return EXIT_FAILURE;
+
+    //     return Utils::Create_File_Path_Tmp(file_path) ? EXIT_SUCCESS : EXIT_FAILURE;
+    // }
+
     /* Initialises everything */
-    if (!App_Init(&app_data, &editor, &cursor_renderer, &command, &config, &arg_parser)) {
+    if (!App_Init(&app_data, &editor_ui, &cursor_renderer, &command, &config, &arg_parser)) {
         return EXIT_FAILURE;
     }
 
@@ -209,14 +220,13 @@ main(int32_t argc, char **argv) -> int32_t
     SDL_Event event;
     while (true) {
         SDL_Delay(ONE_SECOND_MS / app_data.display_mode->refresh_rate);
-        result = App_Event(&event, &app_data, &input_handler, &editor, &command);
+        result = App_Event(&event, &app_data, &input_handler, &editor_ui, &command);
 
         if (result == Exit_Failure || result == Exit_Success) break;
         if (first_start || result == Continue_Render) {
             if (first_start) first_start = false;
-            if (!App_Render(&app_data, &editor, &command)) break;
+            if (!App_Render(&app_data, &editor_ui, &command)) break;
         }
-
     }
 
     SDL::Kill(&app_data);

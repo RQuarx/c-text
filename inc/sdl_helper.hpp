@@ -186,6 +186,7 @@ public:
     /// @warning This function should only be called on the main thread.
     static auto Draw_Filled_Rect(SDL_Renderer *renderer, SDL_Color color, SDL_FRect *rect) -> bool;
 
+    SDL() = delete;
 private:
     static auto Init_Window_Renderer(AppData *app_data, const char *window_title, bool debug) -> bool;
     static auto Fetch_Display_Mode(AppData *app_data, bool debug) -> bool;
