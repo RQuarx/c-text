@@ -6,7 +6,11 @@ using Cursor::Renderer;
 auto
 Renderer::Render(AppData *app_data, Cursor::Data *data, std::string_view font_type) -> bool
 {
-    m_color = app_data->config.Get_Color_Value("cursor", "color");
+    auto color = app_data->config.Get_Color_Value("cursor", "color");
+    m_color.r = color.r;
+    m_color.g = color.g;
+    m_color.b = color.b;
+    m_color.a = color.a;
     m_width = app_data->config.Get_Int_Value("cursor", "width");
     m_renderer = app_data->renderer;
     m_font = app_data->fonts.at(font_type);
