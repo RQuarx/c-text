@@ -1,7 +1,5 @@
 #include <filesystem>
 #include <algorithm>
-#include <fstream>
-#include <atomic>
 #include <string>
 #include <chrono>
 #include <ctime>
@@ -11,8 +9,6 @@
 #include "../inc/logging_utility.hpp"
 #include "../inc/utilities.hpp"
 
-
-static std::atomic<bool> is_check_running = true;
 
 namespace Utils {
     auto
@@ -33,7 +29,7 @@ namespace Utils {
 
         return std::format(
             "{:02}:{:02}:{:03}",
-            tm_info.tm_min, tm_info.tm_min, microseconds.count() / MICROSECOND_TO_MILISECOND
+            tm_info.tm_min, tm_info.tm_sec, microseconds.count() / MICROSECOND_TO_MILISECOND
         );
     }
 
@@ -144,26 +140,4 @@ namespace Utils {
         const std::u8string u8s(utf8_string.cbegin(), utf8_string.cend());
         return { u8s };
     }
-
-
-    auto
-    Is_Instance_Alone(const std::string &lock_file_path) -> bool
-    {
-        struct stat buffer{};
-        if (stat(lock_file_path.c_str(), &buffer) == 0) return false;
-
-        std::ofstream lock_file(lock_file_path);
-        return !!lock_file;
-    }
-
-
-    // void
-    // Listen_Tmp_File_Path(const std::string &tmp_path)
-    // {
-    //     while (is_check_running) {
-    //         if (std::filesystem::exists(tmp_path)) {
-
-    //         }
-    //     }
-    // }
 } /* namespace Utils */

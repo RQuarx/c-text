@@ -27,7 +27,8 @@ Diagnostics:
       'cppcoreguidelines-pro-type-cstyle-cast',
       'misc-non-private-member-variables-in-classes',
       'cppcoreguidelines-pro-type-reinterpret-cast',
-      'cppcoreguidelines-narrowing-conversions'
+      'cppcoreguidelines-narrowing-conversions',
+      'bugprone-forward-declaration-namespace'
     ]
     CheckOptions:
       readability-identifier-naming.VariableCase: pascal_case
